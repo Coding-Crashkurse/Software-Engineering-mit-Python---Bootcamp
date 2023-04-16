@@ -28,7 +28,8 @@ Inhalt
 
 ## Modules & Packages {#modules-packages}
 
-Folderstruktur:
+<strong>Module:</strong> Ein Modul ist eine einzelne Python-Datei, die Python-Code wie Funktionen, Klassen oder Variablen enthält. Module werden verwendet, um den Code in kleinere, überschaubare Teile zu zerlegen, die spezifische Funktionen oder Aufgaben erfüllen. Module können in anderen Python-Dateien importiert und verwendet werden.
+<strong>Packages:</strong> Ein Paket ist eine Sammlung von verwandten Modulen, die in einem Verzeichnis organisiert sind. Jedes Paketverzeichnis enthält eine __init__.py-Datei, die signalisiert, dass das Verzeichnis als Paket behandelt werden sollte. Die __init__.py-Datei kann leer sein oder Initialisierungscodes für das Paket enthalten.
 
 <pre>
 my_project/
@@ -45,3 +46,10 @@ my_project/
     ├── module_b1.py
     └── module_b2.py
 </pre>
+
+Beispiel für import
+
+```python
+import package_a.module_a1
+from package_a.module_a1 import greet
+```

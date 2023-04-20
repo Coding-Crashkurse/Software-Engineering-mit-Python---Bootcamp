@@ -5,6 +5,8 @@ __pycache__/
 # C extensions
 *.so
 
+99_helper
+
 # Distribution / packaging
 bin/
 build/

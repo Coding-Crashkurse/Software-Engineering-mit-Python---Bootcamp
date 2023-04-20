@@ -5,7 +5,7 @@
 3. [Modules & Packages](#modules-packages)
 4. [Clean Code](#clean-code)
 5. [Type Hinting](#type-hinting)
-6. [Linting](#linting)
+6. [Tooling](#tooling)
 7. [Dependency Management & Virtual Environments](#dependency-management)
 8. [Poetry](#poetry)
 9. [Git & Github](#git-github)

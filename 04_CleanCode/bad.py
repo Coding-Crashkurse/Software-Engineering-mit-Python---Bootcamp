@@ -11,5 +11,6 @@ def clc(a, b, o):
     else:
         return None
 
+
 result = clc(4, 2, "a")
 print(result)

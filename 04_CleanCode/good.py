@@ -28,6 +28,7 @@ def calculate(a: int, b: int, operation: str) -> float:
     else:
         raise ValueError(f"Invalid operation: {operation}")
 
+
 try:
     result = calculate(4, 2, "add")
     print(result)

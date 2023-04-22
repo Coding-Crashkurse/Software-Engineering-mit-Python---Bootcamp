@@ -9,7 +9,7 @@
 #
 #
 # @app.command()
-# def goodbye(name: str, formal: bool = False):
+# def goodbye(name: str, formal: bool = False)  :
 #     if formal:
 #         print(f"Bye Mr. {name}!")
 #     else:

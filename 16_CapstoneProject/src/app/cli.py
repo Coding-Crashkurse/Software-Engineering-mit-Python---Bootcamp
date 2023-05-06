@@ -9,6 +9,7 @@ from app.database import (
     SessionLocal,
     User,
     create_tables,
+    get_db_session,
     get_logged_in_user,
     get_user_by_username,
 )
@@ -30,157 +31,183 @@ def init():
 
 
 @app.command()
-def create_user(username: str, password: str):
-    db = SessionLocal()
-    hashed_password = hash_password(password)
-    user = User(username=username, hashed_password=hashed_password)
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    db.close()
-    typer.echo(f"Benutzer {username} wurde erstellt.")
+def create_user():
+    username = typer.prompt("Bitte gib einen Benutzernamen ein")
+    password = typer.prompt("Bitte gib ein Passwort ein", hide_input=True)
+
+    with get_db_session() as db:
+        existing_user = get_user_by_username(username=username, db=db)
+        if existing_user is not None:
+            typer.echo(
+                "Dieser Benutzername ist bereits vergeben. Bitte wähle einen anderen Benutzernamen."
+            )
+            db.close()
+            return
+
+        hashed_password = hash_password(password)
+        user = User(username=username, hashed_password=hashed_password)
+        db.add(user)
+        db.commit()
+        typer.echo(f"Benutzer {username} wurde erstellt.")
 
 
 @app.command()
-def login(username: str, password: str):
-    db = SessionLocal()
-    user = get_user_by_username(username=username, db=db)
-    if user is None:
-        typer.echo("Benutzername oder Passwort falsch.")
-        return
+def login():
+    username = typer.prompt("Gib deinen Benutzernamen ein")
+    password = typer.prompt("Gib dein Passwort ein", hide_input=True)
 
-    if hash_password(password) != user.hashed_password:
-        typer.echo("Benutzername oder Passwort falsch.")
-        return
-    user.is_logged_in = True
-    db.commit()
-    typer.echo("Erfolgreich eingeloggt.")
+    with get_db_session() as db:
+        user = get_user_by_username(username=username, db=db)
+        if user is None:
+            typer.echo("Benutzername oder Passwort falsch.")
+            return
+
+        if hash_password(password) != user.hashed_password:
+            typer.echo("Benutzername oder Passwort falsch.")
+            return
+        user.is_logged_in = True
+        db.commit()
+        typer.echo("Erfolgreich eingeloggt.")
 
 
 @app.command()
 def logout():
-    db = SessionLocal()
-    user = get_logged_in_user(db)
-    if user is None:
-        typer.echo("Du bist nicht eingeloggt.")
-        return
+    with get_db_session() as db:
+        user = get_logged_in_user(db)
+        if user is None:
+            typer.echo("Du bist nicht eingeloggt.")
+            return
 
-    user.is_logged_in = False
-    db.commit()
-    db.close()
-    typer.echo("Erfolgreich ausgeloggt.")
+        user.is_logged_in = False
+        db.commit()
+        typer.echo("Erfolgreich ausgeloggt.")
 
 
 @app.command()
-def create_password(title: str, service_username: str, service_password: str):
-    db = SessionLocal()
-    user = get_logged_in_user(db=db)
-    if user is None:
-        typer.echo("Bitte melde dich zuerst an.")
-        return
+def create_password():
+    with get_db_session() as db:
+        user = get_logged_in_user(db=db)
+        if user is None:
+            typer.echo("Bitte melde dich zuerst an.")
+            return
 
-    existing_password = (
-        db.query(Password)
-        .filter(Password.title == title, Password.user_id == user.id)
-        .first()
-    )
-    if existing_password is not None:
-        typer.echo("Ein Passwort mit diesem Titel existiert bereits.")
-        db.close()
-        return
+        title = typer.prompt("Gib den Titel für das Passwort ein")
+        existing_password = (
+            db.query(Password)
+            .filter(Password.title == title, Password.user_id == user.id)
+            .first()
+        )
+        if existing_password is not None:
+            typer.echo("Ein Passwort mit diesem Titel existiert bereits.")
+            db.close()
+            return
 
-    encrypted_password = encrypt_password(service_password)
+        service_username = typer.prompt("Gib den Benutzernamen für den Service ein")
+        service_password = typer.prompt(
+            "Gib das Passwort für den Service ein", hide_input=True
+        )
 
-    new_password = Password(
-        title=title,
-        username=service_username,
-        encrypted_password=encrypted_password,
-        user_id=user.id,
-    )
-    db.add(new_password)
-    db.commit()
-    db.refresh(new_password)
-    db.close()
+        encrypted_password = encrypt_password(service_password)
 
-    typer.echo(f"Passwort für {title} wurde erstellt.")
+        new_password = Password(
+            title=title,
+            username=service_username,
+            encrypted_password=encrypted_password,
+            user_id=user.id,
+        )
+        db.add(new_password)
+        db.commit()
+        db.refresh(new_password)
+
+        typer.echo(f"Passwort für {title} wurde erstellt.")
 
 
 @app.command()
 def get_passwords():
-    db = SessionLocal()
-    user = get_logged_in_user(db)
-    if user is None:
-        typer.echo("Bitte melde dich zuerst an.")
-        return
+    with get_db_session() as db:
+        user = get_logged_in_user(db)
+        if user is None:
+            typer.echo("Bitte melde dich zuerst an.")
+            return
 
-    stored_passwords = db.query(Password).filter(Password.user_id == user.id).all()
-    db.close()
+        stored_passwords = db.query(Password).filter(Password.user_id == user.id).all()
 
-    if not stored_passwords:
-        typer.echo("Keine Passwörter gefunden.")
-        return
+        if not stored_passwords:
+            typer.echo("Keine Passwörter gefunden.")
+            return
 
-    table_data = []
-    for stored_password in stored_passwords:
-        decrypted_password = decrypt_password(stored_password.encrypted_password)
-        table_data.append([stored_password.title, stored_password.username, decrypted_password])
+        table_data = []
+        for stored_password in stored_passwords:
+            decrypted_password = decrypt_password(stored_password.encrypted_password)
+            table_data.append(
+                [stored_password.title, stored_password.username, decrypted_password]
+            )
 
-    headers = ["Titel", "Benutzername", "Passwort"]
-    table = tabulate(table_data, headers=headers, tablefmt="grid")
-    typer.echo("Gespeicherte Passwörter:")
-    typer.echo(table)
-
-
-@app.command()
-def delete_password(title: str):
-    db = SessionLocal()
-    user = get_logged_in_user(db)
-    if user is None:
-        typer.echo("Bitte melde dich zuerst an.")
-        return
-
-    password_to_delete = (
-        db.query(Password)
-        .filter(Password.title == title, Password.user_id == user.id)
-        .first()
-    )
-
-    if password_to_delete is None:
-        typer.echo("Kein Passwort mit diesem Titel gefunden.")
-        db.close()
-        return
-
-    db.delete(password_to_delete)
-    db.commit()
-    db.close()
-
-    typer.echo("Passwort erfolgreich gelöscht.")
+        headers = ["Titel", "Benutzername", "Passwort"]
+        table = tabulate(table_data, headers=headers, tablefmt="grid")
+        typer.echo("Gespeicherte Passwörter:")
+        typer.echo(table)
 
 
 @app.command()
-def update_password(title: str, new_service_username: str, new_service_password: str):
-    db = SessionLocal()
-    user = get_logged_in_user(db)
-    if user is None:
-        typer.echo("Bitte melde dich zuerst an.")
-        return
+def delete_password():
+    with get_db_session() as db:
+        user = get_logged_in_user(db)
+        if user is None:
+            typer.echo("Bitte melde dich zuerst an.")
+            return
 
-    password_to_update = (
-        db.query(Password)
-        .filter(Password.title == title, Password.user_id == user.id)
-        .first()
-    )
+        title = typer.prompt("Gib den Titel des zu löschenden Passworts ein")
 
-    if password_to_update is None:
-        typer.echo("Kein Passwort mit diesem Titel gefunden.")
-        db.close()
-        return
+        password_to_delete = (
+            db.query(Password)
+            .filter(Password.title == title, Password.user_id == user.id)
+            .first()
+        )
 
-    encrypted_new_password = encrypt_password(new_service_password)
+        if password_to_delete is None:
+            typer.echo("Kein Passwort mit diesem Titel gefunden.")
+            db.close()
+            return
 
-    password_to_update.username = new_service_username
-    password_to_update.encrypted_password = encrypted_new_password
-    db.commit()
-    db.close()
+        db.delete(password_to_delete)
+        db.commit()
 
-    typer.echo("Passwort erfolgreich aktualisiert.")
+        typer.echo("Passwort erfolgreich gelöscht.")
+
+
+@app.command()
+def update_password():
+    with get_db_session() as db:
+        user = get_logged_in_user(db)
+        if user is None:
+            typer.echo("Bitte melde dich zuerst an.")
+            return
+
+        title = typer.prompt("Gib den Titel des zu aktualisierenden Passworts ein")
+
+        password_to_update = (
+            db.query(Password)
+            .filter(Password.title == title, Password.user_id == user.id)
+            .first()
+        )
+
+        if password_to_update is None:
+            typer.echo("Kein Passwort mit diesem Titel gefunden.")
+            db.close()
+            return
+
+        new_service_username = typer.prompt(
+            "Gib den neuen Benutzernamen für den Service ein"
+        )
+        new_service_password = typer.prompt(
+            "Gib das neue Passwort für den Service ein", hide_input=True
+        )
+
+        encrypted_new_password = encrypt_password(new_service_password)
+
+        password_to_update.username = new_service_username
+        password_to_update.encrypted_password = encrypted_new_password
+        db.commit()
+
+        typer.echo("Passwort erfolgreich aktualisiert.")

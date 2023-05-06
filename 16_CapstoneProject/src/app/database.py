@@ -1,5 +1,8 @@
+import os
+from contextlib import contextmanager
 from typing import Optional
 
+import typer
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, relationship, sessionmaker
@@ -38,14 +41,31 @@ User.passwords = relationship(
 )
 
 
+def files_exist():
+    if not os.path.exists(".env") and os.path.exists("app.db"):
+        typer.echo("Bitte erst 'init' Befehl ausführen")
+        raise typer.Exit()
+
+
 def create_tables() -> None:
     Base.metadata.create_all(bind=engine)
 
 
 def get_logged_in_user(db: Session) -> Optional[User]:
+    files_exist()
     return db.query(User).filter(User.is_logged_in).first()
 
 
 def get_user_by_username(username: str, db: Session) -> Optional[User]:
+    files_exist()
     user = db.query(User).filter(User.username == username).first()
     return user
+
+
+@contextmanager
+def get_db_session():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

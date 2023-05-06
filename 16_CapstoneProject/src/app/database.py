@@ -1,6 +1,8 @@
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
+from typing import Optional
+
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.orm import Session, relationship, sessionmaker
 
 DATABASE_URL = "sqlite:///./app.db"
 
@@ -16,6 +18,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
+    is_logged_in = Column(Boolean, default=False)
 
 
 class Password(Base):
@@ -30,9 +33,19 @@ class Password(Base):
     user = relationship("User", back_populates="passwords")
 
 
-User.passwords = relationship("Password", back_populates="user", cascade="all, delete, delete-orphan")
+User.passwords = relationship(
+    "Password", back_populates="user", cascade="all, delete, delete-orphan"
+)
 
-def create_tables():
+
+def create_tables() -> None:
     Base.metadata.create_all(bind=engine)
 
-create_tables()
+
+def get_logged_in_user(db: Session) -> Optional[User]:
+    return db.query(User).filter(User.is_logged_in).first()
+
+
+def get_user_by_username(username: str, db: Session) -> Optional[User]:
+    user = db.query(User).filter(User.username == username).first()
+    return user

@@ -4,16 +4,11 @@ import typer
 from dotenv import load_dotenv
 from tabulate import tabulate
 
-from app.database import (
-    Password,
-    SessionLocal,
-    User,
-    create_tables,
-    get_db_session,
-    get_logged_in_user,
-    get_user_by_username,
-)
-from app.utils import create_env_file, decrypt_password, encrypt_password, hash_password
+from app.database import (Password, SessionLocal, User, create_tables,
+                          get_db_session, get_logged_in_user,
+                          get_user_by_username)
+from app.utils import (create_env_file, decrypt_password, encrypt_password,
+                       hash_password)
 
 app = typer.Typer()
 

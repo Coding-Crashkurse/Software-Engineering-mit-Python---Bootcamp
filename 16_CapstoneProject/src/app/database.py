@@ -3,9 +3,10 @@ from contextlib import contextmanager
 from typing import Optional
 
 import typer
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import Session, relationship, sessionmaker
+from sqlalchemy import (Boolean, Column, ForeignKey, Integer, String,
+                        create_engine)
+from sqlalchemy.orm import (Session, declarative_base, relationship,
+                            sessionmaker)
 
 DATABASE_URL = "sqlite:///./app.db"
 

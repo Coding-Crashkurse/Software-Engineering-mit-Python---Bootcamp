@@ -1,6 +1,6 @@
 [tool.poetry]
-name = "pwmanager"
-version = "0.1.0"
+name = "password_manager"
+version = "0.0.1"
 description = "Passwort Manager"
 authors = ["Markus Lang <datamastery87@gmail.com>"]
 license = "MIT"
@@ -19,7 +19,12 @@ black = "^23.3.0"
 flake8 = "^6.0.0"
 pytest-cov = "^4.0.0"
 
+[tool.poetry.scripts]
+password-manager = "password_manager.main:app"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.setuptools.packages.find]
+where = ["src"]

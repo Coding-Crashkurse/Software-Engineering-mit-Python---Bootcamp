@@ -78,7 +78,7 @@ def logout():
         typer.echo("Erfolgreich ausgeloggt.")
 
 
-@app.command()
+@app.command(name="create_password")
 def create_password():
     with get_db_session() as db:
         user = get_logged_in_user(db=db)
@@ -114,10 +114,10 @@ def create_password():
         db.commit()
         db.refresh(new_password)
 
-        typer.echo(f"Passwort für {title} wurde erstellt.")
+        typer.echo(f"Passwort für wurde erstellt.")
 
 
-@app.command()
+@app.command(name="get_passwords")
 def get_passwords():
     with get_db_session() as db:
         user = get_logged_in_user(db)
@@ -144,7 +144,7 @@ def get_passwords():
         typer.echo(table)
 
 
-@app.command()
+@app.command(name="delete_password")
 def delete_password():
     with get_db_session() as db:
         user = get_logged_in_user(db)
@@ -171,7 +171,7 @@ def delete_password():
         typer.echo("Passwort erfolgreich gelöscht.")
 
 
-@app.command()
+@app.command(name="update_password")
 def update_password():
     with get_db_session() as db:
         user = get_logged_in_user(db)
@@ -206,3 +206,5 @@ def update_password():
         db.commit()
 
         typer.echo("Passwort erfolgreich aktualisiert.")
+
+
